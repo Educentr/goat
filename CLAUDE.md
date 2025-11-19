@@ -194,11 +194,9 @@ env := gtt.NewEnvWithBuilder(gtt.EnvConfig{}, builder)
 
 **3. Direct manager (full control):**
 ```go
-servicesMap := services.NewServicesMap()
-servicesMap.Add("postgres", services.Config{
-    Enabled:  true,
-    Priority: 1,
-})
+servicesMap := services.NewServicesMap("postgres").
+    WithPriority("postgres", 1)
+
 manager := services.NewManager(servicesMap, services.DefaultManagerConfig())
 env := gtt.NewEnvWithManager(gtt.EnvConfig{}, manager)
 ```

@@ -30,16 +30,10 @@
 //
 // For more control, you can configure services with priorities and dependencies:
 //
-//	services := services.NewServicesMap().
-//		Add("postgres", services.Config{
-//			Enabled:  true,
-//			Priority: 1,
-//		}).
-//		Add("myapp", services.Config{
-//			Enabled:      true,
-//			Priority:     2,
-//			Dependencies: []string{"postgres"},
-//		})
+//	services := services.NewServicesMap("postgres", "myapp").
+//		WithPriority("postgres", 1).
+//		WithPriority("myapp", 2).
+//		WithDependencies("myapp", "postgres")
 //
 //	manager := services.NewManager(services, services.DefaultManagerConfig())
 //

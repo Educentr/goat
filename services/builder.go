@@ -38,15 +38,32 @@ func (b *Builder) WithStopOnError(stop bool) *Builder {
 	return b
 }
 
-// WithService enables a custom service with configuration.
-func (b *Builder) WithService(name string, cfg *Config) *Builder {
-	b.services.Add(name, *cfg)
+// WithService adds a service to the builder.
+// The service must be registered in DefaultRegistry, otherwise it panics.
+//
+// Example:
+//
+//	builder.WithService("postgres", testcontainers.WithImage("postgres:15"))
+func (b *Builder) WithService(name string, opts ...testcontainers.ContainerCustomizer) *Builder {
+	if !DefaultRegistry.Has(name) {
+		panic("service '" + name + "' is not registered in DefaultRegistry")
+	}
+	b.services[name] = Config{
+		Opts: opts,
+	}
 	return b
 }
 
-// WithServiceSimple enables a custom service with just options.
-func (b *Builder) WithServiceSimple(name string, opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable(name, opts...)
+// WithServices adds multiple services to the builder without options.
+// All services must be registered in DefaultRegistry, otherwise it panics.
+//
+// Example:
+//
+//	builder.WithServices("postgres", "redis", "clickhouse")
+func (b *Builder) WithServices(names ...string) *Builder {
+	for _, name := range names {
+		b.WithService(name)
+	}
 	return b
 }
 

@@ -82,9 +82,16 @@ func TestRegistry(t *testing.T) {
 }
 
 func TestServicesMap(t *testing.T) {
+	// Register test service for these tests
+	registry := NewRegistry()
+	registry.MustRegister("test", &MockRunner{name: "test"})
+	oldRegistry := DefaultRegistry
+	DefaultRegistry = registry
+	t.Cleanup(func() { DefaultRegistry = oldRegistry })
+
 	t.Run("Add service", func(t *testing.T) {
 		m := NewServicesMap()
-		cfg := Config{Enabled: true, Priority: 1}
+		cfg := Config{Priority: 1}
 
 		m.Add("test", cfg)
 
@@ -92,35 +99,73 @@ func TestServicesMap(t *testing.T) {
 		assert.Equal(t, cfg, m["test"])
 	})
 
-	t.Run("Enable service", func(t *testing.T) {
-		m := NewServicesMap()
-		m.Enable("test")
+	t.Run("NewServicesMap with names", func(t *testing.T) {
+		m := NewServicesMap("test")
 
 		assert.Len(t, m, 1)
-		assert.True(t, m["test"].Enabled)
+		assert.Contains(t, m, "test")
 	})
 
-	t.Run("EnableWithPriority", func(t *testing.T) {
-		m := NewServicesMap()
-		m.EnableWithPriority("test", 5)
+	t.Run("WithPriority", func(t *testing.T) {
+		m := NewServicesMap("test").WithPriority("test", 5)
 
 		assert.Len(t, m, 1)
-		assert.True(t, m["test"].Enabled)
 		assert.Equal(t, 5, m["test"].Priority)
+	})
+
+	t.Run("WithOptions", func(t *testing.T) {
+		opt := testcontainers.CustomizeRequest(testcontainers.GenericContainerRequest{})
+		m := NewServicesMap("test").WithOptions("test", opt)
+
+		assert.Len(t, m, 1)
+		assert.Len(t, m["test"].Opts, 1)
+	})
+
+	t.Run("WithDependencies", func(t *testing.T) {
+		m := NewServicesMap("test").WithDependencies("test", "dep1", "dep2")
+
+		assert.Len(t, m, 1)
+		assert.Equal(t, []string{"dep1", "dep2"}, m["test"].Dependencies)
+	})
+
+	t.Run("Panic on unregistered service", func(t *testing.T) {
+		assert.Panics(t, func() {
+			NewServicesMap("nonexistent")
+		})
 	})
 }
 
 func TestBuilder(t *testing.T) {
+	// Register test services
+	registry := NewRegistry()
+	registry.MustRegister("postgres", &MockRunner{name: "postgres"})
+	registry.MustRegister("redis", &MockRunner{name: "redis"})
+	oldRegistry := DefaultRegistry
+	DefaultRegistry = registry
+	t.Cleanup(func() { DefaultRegistry = oldRegistry })
+
 	t.Run("Build with services", func(t *testing.T) {
 		builder := NewBuilder()
-		builder.WithServiceSimple("postgres").WithServiceSimple("redis")
+		builder.WithService("postgres").WithService("redis")
 
 		manager := builder.Build()
 
 		assert.NotNil(t, manager)
 		assert.Len(t, manager.config, 2)
-		assert.True(t, manager.config["postgres"].Enabled)
-		assert.True(t, manager.config["redis"].Enabled)
+		assert.Contains(t, manager.config, "postgres")
+		assert.Contains(t, manager.config, "redis")
+	})
+
+	t.Run("Build with WithServices", func(t *testing.T) {
+		builder := NewBuilder()
+		builder.WithServices("postgres", "redis")
+
+		manager := builder.Build()
+
+		assert.NotNil(t, manager)
+		assert.Len(t, manager.config, 2)
+		assert.Contains(t, manager.config, "postgres")
+		assert.Contains(t, manager.config, "redis")
 	})
 
 	t.Run("Build with custom logger", func(t *testing.T) {

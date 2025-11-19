@@ -66,10 +66,8 @@ func init() {
     services.MustRegisterServiceFunc("postgres", wrapServiceRunner(psql.Run))
     services.MustRegisterServiceFunc("redis", wrapServiceRunner(redis.Run))
 
-    // Create manager and enable services
-    servicesMap := services.NewServicesMap()
-    servicesMap.Enable("postgres")
-    servicesMap.Enable("redis")
+    // Create manager with services
+    servicesMap := services.NewServicesMap("postgres", "redis")
 
     manager := services.NewManager(servicesMap, services.DefaultManagerConfig())
     env = gtt.NewEnv(gtt.EnvConfig{}, manager)
@@ -151,13 +149,13 @@ func init() {
     services.MustRegisterServiceFunc("postgres", wrapServiceRunner(psql.Run))
 
     // Create manager with custom configuration
-    servicesMap := services.NewServicesMap()
-    servicesMap.Enable("postgres",
-        testcontainers.WithImage("postgres:15"),
-        testcontainers.WithEnv(map[string]string{
-            "POSTGRES_MAX_CONNECTIONS": "200",
-        }),
-    )
+    servicesMap := services.NewServicesMap("postgres").
+        WithOptions("postgres",
+            testcontainers.WithImage("postgres:15"),
+            testcontainers.WithEnv(map[string]string{
+                "POSTGRES_MAX_CONNECTIONS": "200",
+            }),
+        )
 
     // Configure manager settings
     config := services.DefaultManagerConfig()
@@ -179,8 +177,8 @@ func init() {
 
     // Build manager with fluent API
     manager := services.NewBuilder().
-        WithServiceSimple("postgres", testcontainers.WithImage("postgres:15")).
-        WithServiceSimple("redis").
+        WithService("postgres", testcontainers.WithImage("postgres:15")).
+        WithService("redis").
         WithLogger(services.NewDefaultLogger()).
         WithMaxParallel(3).
         Build()

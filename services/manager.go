@@ -278,10 +278,6 @@ func (m *Manager) groupByPriority() map[int]map[string]Config {
 	groups := make(map[int]map[string]Config)
 
 	for name, cfg := range m.config {
-		if !cfg.Enabled {
-			continue
-		}
-
 		if groups[cfg.Priority] == nil {
 			groups[cfg.Priority] = make(map[string]Config)
 		}

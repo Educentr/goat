@@ -12,7 +12,6 @@ GOAT is a comprehensive testing framework built on [testcontainers-go](https://g
 
 ## ✨ Key Features
 
-- **Clean Architecture**: No `/tools` suffix - simple `github.com/Educentr/goat` import
 - **Generic Type-Safe Getters**: `services.GetTyped[T]()` for compile-time type safety
 - **External Service Support**: Integrate with [goat-services](https://github.com/Educentr/goat-services) for 9+ ready-to-use services
 - **Full Context Support**: Proper context propagation for cancellation control
@@ -321,61 +320,6 @@ export DOCKER_PROXY=your-registry.example.com
 ```bash
 export GOAT_REMOTE_DEBUG=true
 export GOAT_REMOTE_DEBUG_PORT=2345
-```
-
-## Migration from v0.0.x
-
-### Import Path Changes
-
-```go
-// Old
-import gtt "github.com/Educentr/goat/tools"
-import "github.com/Educentr/goat/tools/services"
-
-// New
-import gtt "github.com/Educentr/goat"
-import "github.com/Educentr/goat/services"
-```
-
-### Typed Getters
-
-```go
-// Old
-pg := env.MustGetPostgres()
-
-// New
-import "github.com/Educentr/goat-services/psql"
-pg := services.MustGetTyped[*psql.Env](env.Manager(), "postgres")
-```
-
-### Environment Creation
-
-```go
-// Old
-env = gtt.NewEnv(gtt.EnvConfig{}, []string{"postgres", "redis"})
-
-// New - register services first
-services.MustRegisterServiceFunc("postgres", wrapServiceRunner(psql.Run))
-services.MustRegisterServiceFunc("redis", wrapServiceRunner(redis.Run))
-
-servicesMap := services.NewServicesMap()
-servicesMap.Enable("postgres")
-servicesMap.Enable("redis")
-
-manager := services.NewManager(servicesMap, services.DefaultManagerConfig())
-env = gtt.NewEnv(gtt.EnvConfig{}, manager)
-```
-
-### Builder Pattern
-
-```go
-// Old
-builder := services.NewBuilder().WithPostgres().WithRedis()
-
-// New
-builder := services.NewBuilder().
-    WithServiceSimple("postgres").
-    WithServiceSimple("redis")
 ```
 
 ## Architecture

@@ -38,60 +38,6 @@ func (b *Builder) WithStopOnError(stop bool) *Builder {
 	return b
 }
 
-// WithPostgres enables PostgreSQL.
-func (b *Builder) WithPostgres(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("postgres", opts...)
-	return b
-}
-
-// WithVault enables Vault.
-func (b *Builder) WithVault(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("vault", opts...)
-	return b
-}
-
-// WithRedis enables Redis.
-func (b *Builder) WithRedis(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("redis", opts...)
-	return b
-}
-
-// WithClickHouse enables ClickHouse.
-func (b *Builder) WithClickHouse(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("clickhouse", opts...)
-	return b
-}
-
-// WithS3 enables S3 (LocalStack).
-func (b *Builder) WithS3(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("s3", opts...)
-	return b
-}
-
-// WithJaeger enables Jaeger.
-func (b *Builder) WithJaeger(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("jaeger", opts...)
-	return b
-}
-
-// WithMinio enables MinIO.
-func (b *Builder) WithMinio(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("minio", opts...)
-	return b
-}
-
-// WithVictoriaMetrics enables VictoriaMetrics.
-func (b *Builder) WithVictoriaMetrics(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("victoriametrics", opts...)
-	return b
-}
-
-// WithXray enables Xray.
-func (b *Builder) WithXray(opts ...testcontainers.ContainerCustomizer) *Builder {
-	b.services.Enable("xray", opts...)
-	return b
-}
-
 // WithService enables a custom service with configuration.
 func (b *Builder) WithService(name string, cfg *Config) *Builder {
 	b.services.Add(name, *cfg)

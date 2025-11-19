@@ -113,7 +113,7 @@ func TestServicesMap(t *testing.T) {
 func TestBuilder(t *testing.T) {
 	t.Run("Build with services", func(t *testing.T) {
 		builder := NewBuilder()
-		builder.WithPostgres().WithRedis()
+		builder.WithServiceSimple("postgres").WithServiceSimple("redis")
 
 		manager := builder.Build()
 

@@ -90,3 +90,12 @@ type ErrServiceTypeMismatch struct {
 func (e *ErrServiceTypeMismatch) Error() string {
 	return fmt.Sprintf("service %q cannot be cast to %s", e.ServiceName, e.ExpectedType)
 }
+
+// ErrTypeMismatch is returned when GetTyped fails to cast a service container to the requested type.
+type ErrTypeMismatch struct {
+	ServiceName string
+}
+
+func (e *ErrTypeMismatch) Error() string {
+	return fmt.Sprintf("service %q type mismatch: cannot cast to requested type", e.ServiceName)
+}

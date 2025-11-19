@@ -1,7 +1,10 @@
 package services
 
 import (
+	"context"
 	"sync"
+
+	testcontainers "github.com/testcontainers/testcontainers-go"
 )
 
 // Registry holds all available service runners.
@@ -87,4 +90,36 @@ func Register(name string, runner ServiceRunner) error {
 // MustRegister registers a service in the default registry and panics if it fails.
 func MustRegister(name string, runner ServiceRunner) {
 	DefaultRegistry.MustRegister(name, runner)
+}
+
+// funcRunner wraps a function to implement ServiceRunner interface.
+type funcRunner struct {
+	name    string
+	runFunc func(context.Context, ...testcontainers.ContainerCustomizer) (testcontainers.Container, error)
+}
+
+func (r *funcRunner) Run(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (testcontainers.Container, error) {
+	return r.runFunc(ctx, opts...)
+}
+
+func (r *funcRunner) Name() string {
+	return r.name
+}
+
+// RegisterServiceFunc registers a service from a run function.
+// This is useful for registering services from external packages without creating wrapper types.
+//
+// Example:
+//
+//	import "github.com/Educentr/goat-services/psql"
+//	services.RegisterServiceFunc("postgres", psql.Run)
+func RegisterServiceFunc(name string, runFunc func(context.Context, ...testcontainers.ContainerCustomizer) (testcontainers.Container, error)) error {
+	return DefaultRegistry.Register(name, &funcRunner{name: name, runFunc: runFunc})
+}
+
+// MustRegisterServiceFunc registers a service from a run function and panics if it fails.
+func MustRegisterServiceFunc(name string, runFunc func(context.Context, ...testcontainers.ContainerCustomizer) (testcontainers.Container, error)) {
+	if err := RegisterServiceFunc(name, runFunc); err != nil {
+		panic(err)
+	}
 }

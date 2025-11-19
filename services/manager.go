@@ -136,6 +136,45 @@ func (m *Manager) GetContainer(name string) (testcontainers.Container, error) {
 	return env.Container, nil
 }
 
+// GetTyped retrieves a running service container with type assertion.
+// The generic type T should be the concrete service container type (e.g., *psql.Env).
+// Returns an error if the service is not running or if the type assertion fails.
+//
+// Example:
+//
+//	import "github.com/Educentr/goat-services/psql"
+//	pg, err := services.GetTyped[*psql.Env](manager, "postgres")
+func GetTyped[T any](m *Manager, name string) (T, error) {
+	var zero T
+	container, err := m.GetContainer(name)
+	if err != nil {
+		return zero, err
+	}
+
+	typed, ok := container.(T)
+	if !ok {
+		return zero, &ErrTypeMismatch{ServiceName: name}
+	}
+
+	return typed, nil
+}
+
+// MustGetTyped retrieves a running service container with type assertion.
+// Panics if the service is not running or if the type assertion fails.
+// The generic type T should be the concrete service container type (e.g., *psql.Env).
+//
+// Example:
+//
+//	import "github.com/Educentr/goat-services/psql"
+//	pg := services.MustGetTyped[*psql.Env](manager, "postgres")
+func MustGetTyped[T any](m *Manager, name string) T {
+	typed, err := GetTyped[T](m, name)
+	if err != nil {
+		panic(err)
+	}
+	return typed
+}
+
 // IsRunning checks if a service is currently running.
 func (m *Manager) IsRunning(name string) bool {
 	m.mu.RLock()
@@ -156,6 +195,12 @@ func (m *Manager) ListRunning() []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+// Registry returns the service registry for manual service registration.
+// This is typically used by goat-services to register service runners.
+func (m *Manager) Registry() *Registry {
+	return m.registry
 }
 
 // Restart stops and then starts a specific service.

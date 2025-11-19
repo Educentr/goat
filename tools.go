@@ -1,4 +1,4 @@
-package tools
+package goat
 
 import "github.com/gin-gonic/gin"
 

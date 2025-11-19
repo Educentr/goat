@@ -181,7 +181,7 @@ env := gtt.NewEnv(gtt.EnvConfig{}, []string{"postgres", "redis"})
 
 **2. Builder pattern (for customization):**
 ```go
-import "github.com/Educentr/goat/tools/services"
+import "github.com/Educentr/goat/services"
 
 builder := services.NewBuilder().
     WithPostgres(testcontainers.WithImage("postgres:15")).
@@ -218,7 +218,7 @@ if err != nil {
 ## Integration with User Projects
 
 This is a library meant to be imported by other Go projects. Users:
-1. Import `github.com/Educentr/goat/tools` (aliased as `gtt`)
+1. Import `github.com/Educentr/goat` (aliased as `gtt`)
 2. Create `main_test.go` with `TestMain()` that initializes env
 3. Create app-specific executor function that maps container addresses to app env vars
 4. Create `prepareFlow()` helper that configures mocks and returns cleanup function

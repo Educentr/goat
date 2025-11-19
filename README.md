@@ -29,7 +29,7 @@ import(
     "testing"
     "time"
 
-    gtt "github.com/Educentr/goat/tools"
+    gtt "github.com/Educentr/goat"
 )
 
 var env *gtt.Env
@@ -50,8 +50,8 @@ func TestMain(m *testing.M) { // This function is called by go test, once when t
 
 ```golang
 import (
-    "github.com/Educentr/goat/tools"
-    "github.com/Educentr/goat/tools/services"
+    "github.com/Educentr/goat"
+    "github.com/Educentr/goat/services"
     testcontainers "github.com/testcontainers/testcontainers-go"
 )
 

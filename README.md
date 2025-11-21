@@ -338,6 +338,146 @@ Contributions are welcome! Please read our contributing guidelines.
 
 MIT License - see LICENSE file for details
 
+## Comparison with Gnomock
+
+[Gnomock](https://github.com/orlangure/gnomock) is another popular Go testing toolkit that uses Docker containers. Here's a detailed comparison:
+
+### Feature Comparison
+
+| Feature | GOAT | Gnomock |
+|---------|------|---------|
+| **Container Management** | ✅ Via testcontainers-go | ✅ Built-in |
+| **Application Execution** | ✅ Executor with env vars | ❌ Not supported |
+| **HTTP/gRPC Mocking** | ✅ gomock integration | ❌ Not supported |
+| **Test Flow Orchestration** | ✅ Flow pattern | ❌ Not supported |
+| **Data Race Detection** | ✅ Automatic in stdout/stderr | ❌ Not supported |
+| **Remote Debugging** | ✅ Delve integration | ❌ Not supported |
+| **Built-in Presets** | 9 services | 19+ services |
+| **Custom Services** | ✅ Via Registry | ✅ Via custom presets |
+| **Health Checks** | ✅ Via testcontainers | ✅ Built-in |
+| **Parallel Startup** | ✅ Priority-based | ❌ Sequential |
+| **Service Dependencies** | ✅ Dependency resolution | ❌ Not supported |
+| **Service Restart** | ✅ Restart/RestartAll | ❌ Not supported |
+| **Type-Safe Getters** | ✅ Generic `GetTyped[T]()` | ❌ Manual type assertion |
+| **Multi-Language Support** | ❌ Go only | ✅ HTTP server mode |
+
+### When to Choose GOAT
+
+GOAT is the better choice when you need:
+
+- **Full integration testing** — Test your actual Go binary with real dependencies, not just database queries
+- **Service mocking** — Mock external HTTP/gRPC APIs (payment gateways, third-party services) alongside real infrastructure
+- **Test lifecycle management** — Coordinated startup/shutdown of app, mocks, and containers with before/after hooks
+- **Race condition detection** — Automatic data race detection in your application during tests
+- **Complex service dependencies** — Priority-based parallel startup with dependency resolution
+- **Debug capabilities** — Remote debugging with Delve for troubleshooting test failures
+
+```go
+// GOAT: Full application testing with mocks
+flow := gtt.NewFlow(t, env, executor,
+    func(mux *http.ServeMux, ctl *gomock.Controller) {
+        // Mock external payment API
+        paymentMock := payment.NewMockClient(ctl)
+        paymentMock.EXPECT().Charge(gomock.Any()).Return(nil)
+        payment.RegisterHandlers(mux, paymentMock)
+    },
+    nil,
+)
+flow.Start(t, nil, nil)
+defer flow.Stop(t, nil, nil)
+
+// Test your running application
+resp, err := http.Get("http://localhost:8080/api/checkout")
+```
+
+### When to Choose Gnomock
+
+Gnomock is the better choice when you need:
+
+- **Simple container-only testing** — Unit/integration tests that only need database or cache access
+- **Wider service coverage** — 19+ presets including Kafka, Elasticsearch, Cassandra, Splunk, etc.
+- **Multi-language projects** — HTTP server mode for Python, Node.js, and other languages
+- **Quick setup** — Minimal configuration for basic container testing
+- **No application execution** — Testing packages/libraries directly without running a binary
+
+```go
+// Gnomock: Simple database container testing
+container, _ := gnomock.Start(
+    postgres.Preset(
+        postgres.WithDatabase("testdb"),
+        postgres.WithUser("test", "test"),
+    ),
+)
+defer gnomock.Stop(container)
+
+// Test directly against container
+db, _ := sql.Open("postgres", container.DefaultAddress())
+rows, _ := db.Query("SELECT * FROM users")
+```
+
+### Architecture Difference
+
+```
+GOAT Architecture:
+┌─────────────────────────────────────────────────────────┐
+│                    Test Code                            │
+│    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │
+│    │   Flow      │──│  Executor   │──│ Your Binary │   │
+│    │ (lifecycle) │  │ (runner)    │  │ (app.exe)   │   │
+│    └─────────────┘  └─────────────┘  └─────────────┘   │
+│           │                               │             │
+│    ┌──────┴──────┐                 ┌──────┴──────┐     │
+│    │ MocksHandler│                 │  Containers │     │
+│    │ HTTP + gRPC │                 │ (postgres,  │     │
+│    │   (gomock)  │                 │  redis...)  │     │
+│    └─────────────┘                 └─────────────┘     │
+└─────────────────────────────────────────────────────────┘
+
+Gnomock Architecture:
+┌─────────────────────────────────────────────────────────┐
+│                    Test Code                            │
+│                         │                               │
+│              ┌──────────┴──────────┐                   │
+│              │     Containers      │                   │
+│              │  (postgres, redis,  │                   │
+│              │   kafka, elastic..) │                   │
+│              └─────────────────────┘                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Migration from Gnomock
+
+If you're currently using Gnomock and want to migrate to GOAT:
+
+1. **Replace presets with services** — Use `goat-services` or create custom service runners
+2. **Add service registration** — Register services in `init()` with `MustRegisterServiceFuncTyped`
+3. **Wrap with Flow** — Add Flow for application lifecycle management
+4. **Add mocks** — Configure HTTP/gRPC mocks for external services
+
+```go
+// Before (Gnomock)
+container, _ := gnomock.Start(postgres.Preset())
+defer gnomock.Stop(container)
+db, _ := sql.Open("postgres", container.DefaultAddress())
+
+// After (GOAT)
+func init() {
+    services.MustRegisterServiceFuncTyped("postgres", psql.Run)
+    manager := services.NewManager(
+        services.NewServicesMap("postgres"),
+        services.DefaultManagerConfig(),
+    )
+    env = gtt.NewEnv(gtt.EnvConfig{}, manager)
+}
+
+func TestMain(m *testing.M) { gtt.CallMain(env, m) }
+
+func TestFeature(t *testing.T) {
+    pg := services.MustGetTyped[*psql.Env](env.Manager(), "postgres")
+    // pg.DBHost, pg.DBPort, etc. available
+}
+```
+
 ## Credits
 
 Built with:

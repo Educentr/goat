@@ -40,12 +40,10 @@ go get github.com/Educentr/goat-services@latest
 package myapp_test
 
 import (
-    "context"
     "testing"
 
     gtt "github.com/Educentr/goat"
     "github.com/Educentr/goat/services"
-    testcontainers "github.com/testcontainers/testcontainers-go"
 
     // Import services from goat-services
     "github.com/Educentr/goat-services/psql"
@@ -54,17 +52,10 @@ import (
 
 var env *gtt.Env
 
-// wrapServiceRunner wraps typed service runners for registration
-func wrapServiceRunner[T testcontainers.Container](fn func(context.Context, ...testcontainers.ContainerCustomizer) (T, error)) func(context.Context, ...testcontainers.ContainerCustomizer) (testcontainers.Container, error) {
-    return func(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (testcontainers.Container, error) {
-        return fn(ctx, opts...)
-    }
-}
-
 func init() {
-    // Register services from goat-services
-    services.MustRegisterServiceFunc("postgres", wrapServiceRunner(psql.Run))
-    services.MustRegisterServiceFunc("redis", wrapServiceRunner(redis.Run))
+    // Register services from goat-services (type-safe, no wrapper needed)
+    services.MustRegisterServiceFuncTyped("postgres", psql.Run)
+    services.MustRegisterServiceFuncTyped("redis", redis.Run)
 
     // Create manager with services
     servicesMap := services.NewServicesMap("postgres", "redis")
@@ -146,7 +137,7 @@ import (
 )
 
 func init() {
-    services.MustRegisterServiceFunc("postgres", wrapServiceRunner(psql.Run))
+    services.MustRegisterServiceFuncTyped("postgres", psql.Run)
 
     // Create manager with custom configuration
     servicesMap := services.NewServicesMap("postgres").
@@ -172,8 +163,8 @@ func init() {
 ```go
 func init() {
     // Register services
-    services.MustRegisterServiceFunc("postgres", wrapServiceRunner(psql.Run))
-    services.MustRegisterServiceFunc("redis", wrapServiceRunner(redis.Run))
+    services.MustRegisterServiceFuncTyped("postgres", psql.Run)
+    services.MustRegisterServiceFuncTyped("redis", redis.Run)
 
     // Build manager with fluent API
     manager := services.NewBuilder().
@@ -355,5 +346,15 @@ Built with:
 
 ---
 
-**Version:** v0.1.0
+**Version:** v0.4.0
 **Go Version:** 1.23+
+
+## Changelog
+
+### v0.3.1
+- Added `MustRegisterServiceFuncTyped[T]` and `RegisterServiceFuncTyped[T]` - generic functions for type-safe service registration without manual wrapper
+- Added `WrapServiceRunner[T]` - helper for adapting typed service runners to interface type
+- Simplified service registration: no more `wrapServiceRunner` boilerplate in user code
+
+### v0.3.0
+- Initial stable release with full service management API

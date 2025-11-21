@@ -123,3 +123,48 @@ func MustRegisterServiceFunc(name string, runFunc func(context.Context, ...testc
 		panic(err)
 	}
 }
+
+// WrapServiceRunner adapts a typed service runner to the generic Container interface.
+// Use this when registering services that return concrete container types.
+//
+// Example:
+//
+//	import "github.com/Educentr/goat-services/psql"
+//	services.MustRegisterServiceFunc("postgres", services.WrapServiceRunner(psql.Run))
+func WrapServiceRunner[T testcontainers.Container](
+	fn func(context.Context, ...testcontainers.ContainerCustomizer) (T, error),
+) func(context.Context, ...testcontainers.ContainerCustomizer) (testcontainers.Container, error) {
+	return func(ctx context.Context, opts ...testcontainers.ContainerCustomizer) (testcontainers.Container, error) {
+		return fn(ctx, opts...)
+	}
+}
+
+// RegisterServiceFuncTyped registers a service from a typed run function.
+// This is a convenience wrapper that handles type conversion automatically.
+//
+// Example:
+//
+//	import "github.com/Educentr/goat-services/psql"
+//	services.RegisterServiceFuncTyped("postgres", psql.Run)
+func RegisterServiceFuncTyped[T testcontainers.Container](
+	name string,
+	runFunc func(context.Context, ...testcontainers.ContainerCustomizer) (T, error),
+) error {
+	return RegisterServiceFunc(name, WrapServiceRunner(runFunc))
+}
+
+// MustRegisterServiceFuncTyped registers a service from a typed run function and panics if it fails.
+// This is a convenience wrapper that handles type conversion automatically.
+//
+// Example:
+//
+//	import "github.com/Educentr/goat-services/psql"
+//	services.MustRegisterServiceFuncTyped("postgres", psql.Run)
+func MustRegisterServiceFuncTyped[T testcontainers.Container](
+	name string,
+	runFunc func(context.Context, ...testcontainers.ContainerCustomizer) (T, error),
+) {
+	if err := RegisterServiceFuncTyped(name, runFunc); err != nil {
+		panic(err)
+	}
+}

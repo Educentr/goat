@@ -12,11 +12,11 @@ type ServiceConfig interface {
 	// ServiceName returns the service name (e.g., "xvpnback")
 	ServiceName() string
 
-	// APIPort returns the API service port
-	APIPort() string
+	// BinaryPath returns path to the test binary
+	BinaryPath() string
 
-	// SysPort returns the system endpoint port
-	SysPort() string
+	// TransportPort returns port by transport name (e.g., "publicapi", "webhooks", "sys")
+	TransportPort(name string) string
 }
 
 // ExecutorBuilder creates an Executor for the test application

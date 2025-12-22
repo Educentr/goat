@@ -3,8 +3,10 @@ package testutil
 import (
 	"context"
 	"database/sql"
+	"net/http"
 
 	gtt "github.com/Educentr/goat"
+	"go.uber.org/mock/gomock"
 )
 
 // ServiceConfig describes the configuration of the service under test
@@ -54,4 +56,13 @@ type TestAppConfig interface {
 	MigrationRunner
 	TableCleaner
 	ActiveRecordConfig
+}
+
+// HTTPMocksConfig defines HTTP mock setup for GOAT tests.
+// Projects with ogen_client transports MUST implement this interface.
+// Use compile-time check: var _ testutil.HTTPMocksConfig = (*YourType)(nil)
+type HTTPMocksConfig interface {
+	// HTTPMocksSetup returns a callback that configures HTTP mock servers.
+	// This callback is passed to gtt.NewFlow to register mock handlers.
+	HTTPMocksSetup() func(server *http.ServeMux, ctl *gomock.Controller)
 }

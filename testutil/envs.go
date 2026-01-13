@@ -36,9 +36,11 @@ func LoadEnvFile(filePath string) (map[string]string, error) {
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
 
-		// Remove quotes if present
+		// Remove quotes if present and unescape internal quotes
 		if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
 			value = value[1 : len(value)-1]
+			// Unescape quotes that were escaped by WriteEnvFile
+			value = strings.ReplaceAll(value, "\\\"", "\"")
 		}
 
 		result[key] = value

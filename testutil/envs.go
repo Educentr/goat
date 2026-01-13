@@ -50,3 +50,22 @@ func LoadEnvFile(filePath string) (map[string]string, error) {
 
 	return result, nil
 }
+
+// WriteEnvFile writes environment variables map to a .env file
+func WriteEnvFile(filePath string, envVars map[string]string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	for key, value := range envVars {
+		// Escape quotes in value
+		escapedValue := strings.ReplaceAll(value, "\"", "\\\"")
+		if _, err := fmt.Fprintf(file, "%s=\"%s\"\n", key, escapedValue); err != nil {
+			return fmt.Errorf("failed to write to file: %w", err)
+		}
+	}
+
+	return nil
+}
